@@ -1,0 +1,60 @@
+//При обращении клиента, мы отправляем запрос c артикулом в базу данных. 
+В ответ мы получаем JSON который сохраняем в $session.httpResponse
+
+//метка для условий
+$session.flag = 0;
+
+//cразу записываем название товара 
+$session.itemName = $session.httpResponse.data.item.name; 
+
+//возможно не нужно
+$session.stock_online = $session.httpResponse.data.item.stock_online; 
+
+//перезаписываем моедль
+$session.models = $session.httpResponse.data.item.models; 
+
+//Создаём переменную для доступных магазинов
+$session.availability_in_shop = 0; 
+
+//нет товара в городе
+$session.stock_city = 0; 
+
+//проверяем количество товара в онлайне
+if($session.stock_online > 0){
+        $session.flag = 1;
+      }
+      //если есть магазины
+if($session.httpResponse.data.item.available_in_shops){
+
+  //цикл с перебом городов
+  for(var a = 0; a < $session.httpResponse.data.item.availability_offline.availability_in_city.length; a++){
+    //Ищем город
+
+      if($session.city === $session.httpResponse.data.item.availability_offline.availability_in_city[a].city){
+
+        //перезаписываем информацию по доступным магазинам
+        $session.availability_in_shop = $session.httpResponse.data.item.availability_offline.availability_in_city[a].availability_in_shop; 
+
+        //Заранее сортируем объект в переменной
+        $session.availability_in_shop.sort(function(a, b) {
+          return b.stock_shop - a.stock_shop;
+        });
+      //сразу проверяем, доступно ли в оффлайне в целом
+      if($session.httpResponse.data.item.available_in_shops){
+          //нужно для будущей проверки
+           $session.flag = 3; 
+          //проверяем, есть ли товар в городе
+           if($session.httpResponse.data.item.availability_offline.availability_in_city[a].stock_city > 0){ 
+             $session.stock_city = 1; //есть ли товар в городе
+           }
+      }
+      //прекращаем цикл если нашли город
+      break; 
+    } else {
+      //если не нашли город
+      $session.flag = 2; 
+    }
+  }
+}
+//обнуляем объект
+$session.httpResponse = ""; 
