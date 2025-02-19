@@ -1,0 +1,12 @@
+//Переменная под запись
+$session.phone = '';
+//Переменная под флаг
+$session.flag = 0;
+//создаём переменную под регулярное выражение, которое ищет цифры в строке
+var phoneRegex = /\b\d{10,11}\b/g
+//проверяем, есть ли в строке нужное количество цифр
+if($session.name.match(phoneRegex)){
+//мы записываем в переменную возвращаемый match() массив данных
+    $session.phone = $session.name.match(phoneRegex);
+    $session.flag = 1;
+    }
