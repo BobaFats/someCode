@@ -1,0 +1,99 @@
+//Ещё один пример работы с динамическими кнопками и текстом. На входе есть JSON с моделями автомобиля указанного в начале сценария.
+//Реализация идёт с применением функций. 
+
+//Функция запущена и идёт проверка счётчика, чтобы в наличии иметь не больше 7 кнопок
+var border = 6;
+function limitCounter (){
+    if ($session.counter <= $session.carModel.Data.length){
+//если успех, то запускаю функцию
+        firstStep ();
+    } else {
+        $response.replies = $response.replies || [];
+            $response.replies.push({
+                "type": "text",
+                "text": "К сожалению больше ничего нет"
+            });
+            $response.replies.push({
+                    "type": "buttons",
+                    "buttons": [{
+                    "text": "Вернуться в основное меню"
+                    }]
+                  });
+    }
+}
+function secondStep (){
+        for (var i = $session.counter - 1; i <= $session.carModel.Data.length; i++){
+            if (($session.counter % border) && ($session.counter !== 0) && ($session.counter !== $session.carModel.Data.length + 1)){
+            $session.counter += 1;
+            $response.replies.push({
+                    "type": "buttons",
+                    "buttons": [{
+                    "text": $session.carModel.Data[i].title_model
+                    }]
+                  }); 
+            } else {
+                $session.counter += 1;
+                $response.replies.push({
+                    "type": "buttons",
+                    "buttons": [{
+                    "text": "Далее"
+                    }]
+                  }); 
+                  $response.replies.push({
+                    "type": "buttons",
+                    "buttons": [{
+                    "text": "Вернуться в основное меню"
+                    }]
+                  });
+                break; 
+            }
+        }
+    }
+function firstStep (){
+    if ($session.carModel.Data.length === 1) {
+      $session.oneModel = $session.carModel.Data[0].title_model;
+      $response.replies = $response.replies || [];
+            $response.replies.push({
+                "type": "text",
+                "text": "Я нашёл только модель " + $session.carModel.Data[0].title_model + " Это она?"
+            });
+            $response.replies.push({
+                    "type": "buttons",
+                    "buttons": [{
+                    "text": "Да"
+                    }]
+                  }); 
+                  $response.replies.push({
+                    "type": "buttons",
+                    "buttons": [{
+                    "text": "Нет"
+                    }]
+                  });
+    } else if ($session.carModel.Data.length === 0){
+        $response.replies = $response.replies || [];
+            $response.replies.push({
+                "type": "text",
+                "text": "К сожалению я не нашёл эту модель"
+            });
+            $response.replies.push({
+                    "type": "buttons",
+                    "buttons": [{
+                    "text": "Попробовать ещё раз"
+                    }]
+                  }); 
+                  $response.replies.push({
+                    "type": "buttons",
+                    "buttons": [{
+                    "text": "Вернуться в основное меню"
+                    }]
+                  });
+    } else {
+        $response.replies = $response.replies || [];
+            $response.replies.push({
+                "type": "text",
+                "text": "Я нашёл следующие варианты"
+            });
+        secondStep ();
+    }     
+}
+limitCounter ();
