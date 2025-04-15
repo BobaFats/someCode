@@ -1,0 +1,24 @@
+//Отправляем текст клиенту 
+$response.replies = $response.replies || [];
+            $response.replies.push({
+                "type": "text",
+                "text": "Выберите один из доступных цветов"
+            });
+
+//Перебираем массив с цветами
+for (var a = 0; a < $session.models.length; a++){
+  if($session.models[a].stock_online > 0){
+    $response.replies.push({
+                  "type": "buttons",
+                  "buttons": [{
+                  "text": $session.models[a].color
+                }]
+              });
+}}
+//Докидываем кнопку
+$response.replies.push({
+            "type": "buttons",
+            "buttons": [{
+             "text": "Проверить другой товар"
+        }]
+      });
