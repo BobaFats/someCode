@@ -1,0 +1,20 @@
+//Меняем параметры ввода имени
+//Убираем символы и меняем их на пробелы. 
+$fio = $fio.replace(/[^a-zA-Zа-яА-Я ]/g, ' ');
+//Обработка даты. Меняем ввод даты на формат ISO 8601
+if (!/^\d{4}-\d{2}-\d{2}$/.test($dateBirth)) {
+    $dateBirth = $dateBirth.replace(/\./g, '-');
+    $dateBirth = $dateBirth.replace(/(\d{2})-(\d{2})-(\d{2,4})/, function(match, day, month, year) {
+        // Проверяем количество цифр в году
+        if (year.length === 2) {
+            var yearNum = parseInt(year);
+            if (yearNum >= 1 && yearNum <= 25) {
+                year = '20' + year;
+            } else {
+                year = '19' + year;
+            }
+        }
+        // Если год уже четырехзначный, оставляем как есть
+        return year + '-' + month + '-' + day;
+    });
+}
