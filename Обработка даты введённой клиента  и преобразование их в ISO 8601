@@ -1,6 +1,45 @@
 //Меняем параметры ввода имени
-//Убираем символы и меняем их на пробелы. 
+function correctFIOOrder(inputString) {
+    if (typeof inputString !== 'string') throw new Error('Некорректный ввод');
+    var parts = String(inputString).trim().split(/\s+/);
+    if (parts.length !== 3) throw new Error('Некорректный формат ввода.');
+
+    function isInitial(s) { return /^[А-ЯЁ]\.$/.test(s); }
+    function isPatronymic(s) { return /(ович|евич|ич|овна|евна|ична)$/i.test(s) || isInitial(s); }
+    function isSurname(s) { return /(ов|ев|ёв|ин|ын|ский|ская|цкий|цкая|ова|ева|ёва|ина|ына|енко|ук|юк|чук|швили|дзе|ян)$/i.test(s); }
+
+    var surname, name, patronymic;
+
+    // 1) Определяем отчество
+    for (var i = 0; i < 3; i++) {
+        if (isPatronymic(parts[i])) { patronymic = parts[i]; parts[i] = null; break; }
+    }
+    // 2) Определяем фамилию
+    for (var j = 0; j < 3; j++) {
+        if (parts[j] && isSurname(parts[j])) { surname = parts[j]; parts[j] = null; break; }
+    }
+    // 3) Остаток — имя
+    for (var k = 0; k < 3; k++) {
+        if (parts[k]) { name = parts[k]; parts[k] = null; break; }
+    }
+
+    // Фолбэки, если что-то не определили
+    var rest = String(inputString).trim().split(/\s+/);
+    if (!surname) surname = rest[2] || rest[0];
+    if (!name) name = rest[0] !== surname ? rest[0] : rest[1];
+    if (!patronymic) {
+        for (var t = 0; t < rest.length; t++) { if (rest[t] !== surname && rest[t] !== name) { patronymic = rest[t]; break; } }
+        if (!patronymic) patronymic = rest[1];
+    }
+
+    return surname + ' ' + name + ' ' + patronymic;
+}
+// Сохраняем откорректированное ФИО в $fio
+$fio = correctFIOOrder($fio);
+//Убираем символы и меняем их на пробелы.
 $fio = $fio.replace(/[^a-zA-Zа-яА-Я ]/g, ' ');
+
+
 //Обработка даты. Меняем ввод даты на формат ISO 8601
 if (!/^\d{4}-\d{2}-\d{2}$/.test($dateBirth)) {
     $dateBirth = $dateBirth.replace(/\./g, '-');
