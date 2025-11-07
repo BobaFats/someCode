@@ -1,0 +1,44 @@
+//Объект времени получаемый по запросу
+var httpResponse = {
+  timezone: "Europe/Moscow",
+  formatted: "2025-11-07",
+  timestamp: 1762505694767,
+  weekDay: 5,
+  day: 7,
+  month: 11,
+  year: 2025,
+  hour: 11,
+  minute: 54
+};
+// Эта функция служит для дополнения чисел ведущими нулями, если число меньше 10, например на вход получили 3, на выходе 03. На вход получили 15, на выходе так же будет 15
+function pad(n) {
+  return n < 10 ? '0' + n : n;
+}
+
+// Получаем компоненты времени
+var components = [
+  httpResponse.year,
+  httpResponse.month - 1, // месяцы нумеруются с нуля
+  httpResponse.day,
+  httpResponse.hour,
+  httpResponse.minute
+];
+
+// Создаем объект Date, представляющий московское время
+var dateObj = new Date(Date.UTC.apply(null, components));
+
+// Добавляем ровно 30 минут
+dateObj.setMinutes(dateObj.getMinutes() + 30);
+
+// Извлекаем новые значения компонентов (учитывая возможные переходы часа/дня)
+var newY = dateObj.getUTCFullYear(),
+    newM = dateObj.getUTCMonth() + 1, // обратно добавляем единицу месяца
+    newD = dateObj.getUTCDate(),
+    newH = dateObj.getUTCHours(),
+    newMin = dateObj.getUTCMinutes(),
+    newSec = dateObj.getUTCSeconds(); // секунды изначально были нулевыми
+
+// Формируем строки начала и конца интервала
+var dt_start = newY + '-' + pad(newM) + '-' + pad(newD) +
+               'T' + pad(newH) + ':' + pad(newMin) + ':' + pad(newSec),
+    dt_end = httpResponse.formatted + 'T23:59:59';
