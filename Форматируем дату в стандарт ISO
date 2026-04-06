@@ -1,0 +1,145 @@
+$session.wishTime_end;
+$session.doc_list = 0;
+$session.notImportatnData;
+$session.importantData;
+$session.appointment = "primary";
+
+            // Функция для добавления одного дня к текущей дате
+            function addOneDayToDate(dateObj) {
+                // Создаем глубокую копию объекта
+                var newDate = JSON.parse(JSON.stringify(dateObj));
+                // Получаем дату из timestamp
+                var date = new Date(newDate.timestamp);
+                // Добавляем один день (24 часа)
+                date.setTime(date.getTime() + (24 * 60 * 60 * 1000));
+                // Обновляем поля объекта
+                newDate.timestamp = date.getTime();
+                newDate.year = date.getFullYear();
+                newDate.month = date.getMonth() + 1;
+                newDate.day = date.getDate();
+                newDate.weekDay = date.getDay() === 0 ? 7 : date.getDay();
+                // Форматируем дату
+                var year = date.getFullYear();
+                var month = String(date.getMonth() + 1);
+                var day = String(date.getDate());
+                if (month.length < 2) month = '0' + month;
+                if (day.length < 2) day = '0' + day;
+                newDate.formatted = year + '-' + month + '-' + day;
+                return newDate;
+            }
+
+            function parseDateToISO(dateStr, dateObj) {
+                // Проверяем, если пользователь ввел "ЗАВТРА"
+                if (typeof dateStr === 'string') {
+                    var normalizedInput = dateStr.trim().toUpperCase();
+                    if (normalizedInput === 'ЗАВТРА') {
+                        // Получаем дату на завтра
+                        var tomorrowObj = addOneDayToDate(dateObj);
+                        // Возвращаем отформатированную дату
+                        return tomorrowObj.formatted;
+                    }
+                }
+                var currentYear = dateObj.year;
+                var monthMap = {
+                    "января": "01", "январь": "01", "янв": "01", "янв.": "01",
+                    "февраля": "02", "февраль": "02", "фев": "02", "фев.": "02",
+                    "марта": "03", "март": "03", "мар": "03", "мар.": "03",
+                    "апреля": "04", "апрель": "04", "апр": "04", "апр.": "04",
+                    "мая": "05", "май": "05", 
+                    "июня": "06", "июнь": "06", "июн": "06", "июн.": "06",
+                    "июля": "07", "июль": "07", "июл": "07", "июл.": "07",
+                    "августа": "08", "август": "08", "авг": "08", "авг.": "08",
+                    "сентября": "09", "сентябрь": "09", "сен": "09", "сен.": "09", "сент": "09", "сент.": "09",
+                    "октября": "10", "октябрь": "10", "окт": "10", "окт.": "10",
+                    "ноября": "11", "ноябрь": "11", "ноя": "11", "ноя.": "11", "нояб": "11", "нояб.": "11",
+                    "декабря": "12", "декабрь": "12", "дек": "12", "дек.": "12"
+                };
+                var s = String(dateStr)
+                    .toLowerCase()
+                    .replace('ё', 'е')
+                    .replace(/\s+г\.?$/, "")
+                    .replace(/\s+/g, " ")
+                    .trim();
+                //регулярка для удаления запятых
+                s = s.replace(/,/g, ' ');
+                // Функция для обработки года
+                  function processYear(y) {
+                    if (!y) return currentYear.toString();
+                    if (y.length === 2) {
+                    var yn = parseInt(y, 10);
+                    return (yn >= 0 && yn <= 49 ? "20" : "19") + y; // 0-49 -> 2000, 50-99 -> 1900
+                    }
+                    return y;
+                    }
+                // Функция для добавления ведущего нуля
+                function padZero(num) {
+                    return num.length === 1 ? "0" + num : num;
+                }
+                // 0) Обработка формата DDMMYYYY (без разделителей)
+                if (/^\d{8}$/.test(s)) {
+                    s = s.replace(/^(\d{2})(\d{2})(\d{4})$/, "$1-$2-$3");
+                }
+                // 1) Русские месяцы (с годом или без года)
+                s = s.replace(/(\d{1,2})\s+([а-я\.]+)(?:\s+(\d{2,4}))?/i, function(_, d, m, y) {
+                    var mm = monthMap[m];
+                    if (!mm) return _;
+                    d = padZero(d);
+                    y = processYear(y);
+                    return y + "-" + mm + "-" + d;
+                });
+                if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
+                // 2) Обработка формата с разделителями-пробелами
+                var spaceMatch = s.match(/^(\d{1,2})\s+(\d{1,2})(?:\s+(\d{2,4}))?$/);
+                if (spaceMatch) {
+                    var d = padZero(spaceMatch[1]);
+                    var m = padZero(spaceMatch[2]);
+                    var y = processYear(spaceMatch[3]);
+                    return y + "-" + m + "-" + d;
+                }
+                // 3) Заменим точки и слеши на дефисы
+                s = s.replace(/[\.\/]/g, "-");
+                if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
+                // 4) Формат DD-MM-YY(YY) или DD-MM (без года)
+                var dashMatch = s.match(/^(\d{1,2})-(\d{1,2})(?:-(\d{2,4}))?$/);
+                if (dashMatch) {
+                    var d = padZero(dashMatch[1]);
+                    var m = padZero(dashMatch[2]);
+                    var y = processYear(dashMatch[3]);
+                    return y + "-" + m + "-" + d;
+                }
+                return s;
+            }
+            $session.wishTime = parseDateToISO($session.wishTime, $session.dateObj);
+            // Проверяем, совпадают ли даты
+            var datesMatch = $session.wishTime === $session.dateObj.formatted;
+            if (datesMatch) {
+                // Даты совпадают - добавляем время + 30 минут
+                // Форматируем часы и минуты с ведущими нулями
+                var hourStr = ('0' + $session.dateObj.hour).slice(-2);
+                var minuteStr = ('0' + $session.dateObj.minute).slice(-2);
+                // Создаем строку даты-времени
+                var dateTimeStr = $session.wishTime + 'T' + hourStr + ':' + minuteStr + ':00';
+                // Создаем объект Date и добавляем 30 минут
+                var date = new Date(dateTimeStr);
+                date.setMinutes(date.getMinutes() + 30);
+                // Форматируем результат
+                var resultYear = date.getFullYear();
+                var resultMonth = ('0' + (date.getMonth() + 1)).slice(-2);
+                var resultDay = ('0' + date.getDate()).slice(-2);
+                var resultHours = ('0' + date.getHours()).slice(-2);
+                var resultMinutes = ('0' + date.getMinutes()).slice(-2);
+                $session.wishTime = resultYear + '-' + resultMonth + '-' + resultDay + 
+                           'T' + resultHours + ':' + resultMinutes + ':00';
+                $session.wishTime_end = resultYear + '-' + resultMonth + '-' + resultDay + 
+                               'T23:59:59';      
+                $session.notImportatnData = resultYear + '-' + resultMonth + '-' + resultDay;
+                $session.importantData = resultYear + '-' + resultMonth + '-' + resultDay;
+            } else {
+                // Даты не совпадают - просто добавляем T00:00:00
+                $session.notImportatnData = $session.wishTime;
+                $session.importantData = $session.wishTime;
+                $session.wishTime_end = $session.wishTime + 'T23:59:59'; 
+                $session.wishTime += 'T00:00:00';
+            }
+            $session.dt_start = $session.wishTime;
+            $session.dt_end = $session.wishTime_end;
