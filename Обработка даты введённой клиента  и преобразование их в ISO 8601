@@ -1,44 +1,109 @@
-//Меняем параметры ввода имени
+function cleanTextPreserveSpaces(str) {
+    return str.replace(/[0-9.,]/g, '');
+        }
 function correctFIOOrder(inputString) {
-    if (typeof inputString !== 'string') throw new Error('Некорректный ввод');
-    var parts = String(inputString).trim().split(/\s+/);
-    if (parts.length !== 3) throw new Error('Некорректный формат ввода.');
-
-    function isInitial(s) { return /^[А-ЯЁ]\.$/.test(s); }
-    function isPatronymic(s) { return /(ович|евич|ич|овна|евна|ична)$/i.test(s) || isInitial(s); }
-    function isSurname(s) { return /(ов|ев|ёв|ин|ын|ский|ская|цкий|цкая|ова|ева|ёва|ина|ына|енко|ук|юк|чук|швили|дзе|ян)$/i.test(s); }
-
-    var surname, name, patronymic;
-
-    // 1) Определяем отчество
-    for (var i = 0; i < 3; i++) {
-        if (isPatronymic(parts[i])) { patronymic = parts[i]; parts[i] = null; break; }
-    }
-    // 2) Определяем фамилию
-    for (var j = 0; j < 3; j++) {
-        if (parts[j] && isSurname(parts[j])) { surname = parts[j]; parts[j] = null; break; }
-    }
-    // 3) Остаток — имя
-    for (var k = 0; k < 3; k++) {
-        if (parts[k]) { name = parts[k]; parts[k] = null; break; }
-    }
-
-    // Фолбэки, если что-то не определили
-    var rest = String(inputString).trim().split(/\s+/);
-    if (!surname) surname = rest[2] || rest[0];
-    if (!name) name = rest[0] !== surname ? rest[0] : rest[1];
-    if (!patronymic) {
-        for (var t = 0; t < rest.length; t++) { if (rest[t] !== surname && rest[t] !== name) { patronymic = rest[t]; break; } }
-        if (!patronymic) patronymic = rest[1];
-    }
-
-    return surname + ' ' + name + ' ' + patronymic;
-}
-// Сохраняем откорректированное ФИО в $fio
-$fio = correctFIOOrder($fio);
-//Убираем символы и меняем их на пробелы.
-$fio = $fio.replace(/[^a-zA-Zа-яА-Я ]/g, ' ');
-
+         var parts = String(inputString).trim().split(/\s+/);
+        // Улучшенные функции проверки
+           function isInitial(s) { 
+              return /^[А-ЯЁ]\.$/.test(s); 
+            }
+           function isPatronymic(s) { 
+              // Проверяем окончания отчеств (только полные формы)
+              return /(ович|евич|ич|овна|евна|ична|инична|инич)$/i.test(s) || isInitial(s);
+            }
+           function isSurname(s) { 
+              // Проверяем окончания фамилий
+             return /(ов|ев|ёв|ин|ын|ский|ская|цкий|цкая|ова|ева|ёва|ина|ына|енко|ук|юк|чук|швили|дзе|ян|их|ых|ая|яя)$/i.test(s);
+           }
+           function isName(s) {
+               // Популярные имена (можно расширить)
+               var commonNames = [
+                   'ольга', 'елена', 'наталья', 'ирина', 'татьяна', 'александра', 
+                   'мария', 'светлана', 'анна', 'юлия', 'анастасия', 'екатерина',
+                   'алексей', 'иван', 'сергей', 'дмитрий', 'михаил', 'андрей', 
+                   'максим', 'евгений', 'владимир', 'павел', 'николай', 'артем'
+                ];
+                // провка наличия в массиве
+                    var lowerS = s.toLowerCase();
+                    for (var i = 0; i < commonNames.length; i++) {
+                        if (commonNames[i] === lowerS) {
+                            return true;
+                        }
+                    }
+                    return false;
+                }
+                var surname, name, patronymic;
+                var remainingParts = parts.slice(); // Копируем массив
+                // 1) Определяем отчество (но проверяем, что это не фамилия)
+                for (var i = 0; i < remainingParts.length; i++) {
+                    if (isPatronymic(remainingParts[i]) && !isSurname(remainingParts[i])) {
+                        patronymic = remainingParts[i];
+                        remainingParts.splice(i, 1);
+                        break;
+                    }
+                }
+                // Если не нашли отчество, попробуем найти по другому критерию
+                if (!patronymic) {
+                    for (var i = 0; i < remainingParts.length; i++) {
+                        if (isPatronymic(remainingParts[i])) {
+                            patronymic = remainingParts[i];
+                            remainingParts.splice(i, 1);
+                            break;
+                        }
+                    }
+                }
+                // 2) Определяем имя (если можем по списку)
+                for (var j = 0; j < remainingParts.length; j++) {
+                    if (isName(remainingParts[j])) {
+                        name = remainingParts[j];
+                        remainingParts.splice(j, 1);
+                        break;
+                    }
+                }
+                // 3) Определяем фамилию
+                for (var k = 0; k < remainingParts.length; k++) {
+                    if (isSurname(remainingParts[k])) {
+                        surname = remainingParts[k];
+                        remainingParts.splice(k, 1);
+                        break;
+                    }
+                }
+                // 4) Если что-то не определили, заполняем остатки
+                if (!name && remainingParts.length > 0) {
+                    name = remainingParts.shift();
+                }
+                if (!surname && remainingParts.length > 0) {
+                    surname = remainingParts.shift();
+                }
+                if (!patronymic && remainingParts.length > 0) {
+                    patronymic = remainingParts.shift();
+                }
+                // 5) Фолбэки, если все еще что-то не определили
+                var originalParts = String(inputString).trim().split(/\s+/);
+                if (!surname) surname = originalParts[2] || originalParts[0];
+                if (!name) {
+                    // Ищем имя среди оригинальных частей
+                    for (var n = 0; n < originalParts.length; n++) {
+                        if (originalParts[n] !== surname && originalParts[n] !== patronymic) {
+                            name = originalParts[n];
+                            break;
+                        }
+                    }
+                    if (!name) name = originalParts[1];
+                }
+                if (!patronymic) {
+                    // Ищем отчество среди оригинальных частей
+                    for (var p = 0; p < originalParts.length; p++) {
+                        if (originalParts[p] !== surname && originalParts[p] !== name) {
+                            patronymic = originalParts[p];
+                            break;
+                        }
+                    }
+                    if (!patronymic) patronymic = originalParts[2] || originalParts[1];
+                }
+                return surname + ' ' + name + ' ' + patronymic;
+            }
+$session.fio = correctFIOOrder($session.fio);
 
 //Обработка даты. Меняем ввод даты на формат ISO 8601
 if (!/^\d{4}-\d{2}-\d{2}$/.test($dateBirth)) {
