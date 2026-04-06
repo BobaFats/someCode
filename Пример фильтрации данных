@@ -1,0 +1,30 @@
+//Этот код выполняет фильтрацию врачей (докторов) по возрастным ограничениям, извлечённым из строки age_range
+$session.httpResponse = 0; //Зачищаем объект...надо)
+            $session.dataThing = $session.dataThing.result; 
+            $session.doc_list = [];
+            for(var a = 0; a < $session.dataThing.length; a++){
+                for(var b = 0; b < $session.dataThing[a].specs.length; b++){
+                        // Используем регулярное выражение для выбора любых чисел
+                        var ageRange = $session.dataThing[a].specs[b].clinics[0].age_range;
+                        var numbers = ageRange.match(/\d+/g);
+                        // Обрабатываем возможные варианты
+                        if (numbers.length === 1 && $session.age_client === parseInt(numbers[0], 10)) {
+                            $session.doc_list.push({doc_id:$session.dataThing[a].id, doc_name: $session.dataThing[a].name, spec_id: $session.spec_id, spec_name:$session.spec_name, countDaysByDoctor:$session.dataThing[a].countDaysByDoctor, fil_id: $session.fil_id});
+                        } else if (numbers.length === 2) {
+                        // Диапазон возрастов. Некоторые врачи принимают пациентов определённых возрастов. Извлекаем вернхнюю и нижнюю границу возраста например 18-60.
+                        var lowerBound = parseInt(numbers[0], 10);   //тут взяли к примеру 18
+                        var upperBound = parseInt(numbers[1], 10);   //тут 60. 
+                        //проверяем результат
+                        if($session.age_client >= lowerBound && $session.age_client <= upperBound){
+                            //добавляем объект в массив $session.doc_list
+                            $session.doc_list.push({doc_id:$session.dataThing[a].id, doc_name: $session.dataThing[a].name, spec_id: $session.spec_id, spec_name:$session.spec_name, countDaysByDoctor:$session.dataThing[a].countDaysByDoctor, fil_id: $session.fil_id});
+                        }
+                        }
+                    }
+                }
+            if($session.doc_list.length === 0){
+                $session.flag = 0;
+            } else {
+                $session.flag = 1;
+            }
+            $session.dataThing = 0;
