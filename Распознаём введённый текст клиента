@@ -1,0 +1,100 @@
+//В данном случае распознаём спеицальность врача
+var specialist = $session.specialist.result;
+$session.specialist.result = 0;
+$session.httpResponse = 0;
+$session.spec_id = null;
+$session.spec_name = null;
+            
+            function firstStep(text) {
+                var normalized = text.toLowerCase();
+            
+                // Удаляем ключевые слова
+                do {
+                    var previous = normalized;
+                    normalized = normalized.replace(/(ко|на|запишите|запись|хочу|нужен|нужна|нужно|записаться|меня|мне|нам|посоветуйте|ищу|ищем)\s+/g, '');
+                } while (normalized !== previous);
+            
+                // Заменяем тире на пробел
+                normalized = normalized.replace(/-/g, ' ');
+            
+                // Удаляем все символы кроме букв и пробелов
+                normalized = normalized.replace(/[^\sа-яё]/g, '');
+            
+                // Удаляем множественные пробелы
+                normalized = normalized.replace(/\s+/g, ' ');
+            
+                // Удаляем пробелы в начале и конце
+                normalized = normalized.replace(/^\s+|\s+$/g, '');
+            
+                // Если слово заканчивается на "у", удаляем её
+                if (normalized.slice(-1) === 'у') {
+                    normalized = normalized.slice(0, -1);
+                }
+            
+                return normalized;
+            }
+            
+            function normalizedSpecName(arrSpecName) {
+                var SpecName = arrSpecName.replace(/-/g, ' ');
+                SpecName = SpecName.toLowerCase();
+                return SpecName;
+            }
+            
+            function findSpecialist(specName, searchText, prioritizeChildren) {
+                var exactMatch = null;
+                var adultMatch = null;
+            
+                for (var a = 0; a < specName.length; a++) {
+                    var specNormalized = normalizedSpecName(specName[a].name);
+            
+                    // Проверяем точное совпадение
+                    if (searchText === specNormalized) {
+                        exactMatch = specName[a];
+                    }
+            
+                    // Если ищем с "детский"
+                    if (prioritizeChildren && searchText.indexOf('детский') !== -1) {
+            
+                        // Убираем "детский" из поискового запроса
+                        var searchWithoutChildren = searchText.replace(/детский\s*/g, '');
+                        searchWithoutChildren = searchWithoutChildren.replace(/^\s+|\s+$/g, '');
+            
+                        // Убираем "детский" из названия специальности
+                        var specWithoutChildren = specNormalized.replace(/детский\s*/g, '');
+                        specWithoutChildren = specWithoutChildren.replace(/^\s+|\s+$/g, '');
+            
+                        if (searchWithoutChildren === specWithoutChildren) {
+                            adultMatch = specName[a];
+                        }
+                    }
+                }
+            
+                return exactMatch || adultMatch;
+            }
+            
+            // Сохраняем оригинальный текст
+            var originalText = $session.name_doc;
+            
+            // Первый поиск
+            var result = findSpecialist(specialist, originalText.toLowerCase(), true);
+            
+            if (result) {
+                $session.spec_id = result.id;
+                $session.spec_name = result.name;
+                $session.flag = 1;
+            } else {
+            
+                // Второй поиск
+                var processedText = firstStep(originalText);
+                result = findSpecialist(specialist, processedText, true);
+            
+                if (result) {
+                    $session.spec_id = result.id;
+                    $session.spec_name = result.name;
+                    $session.flag = 1;
+                } else {
+                    $session.flag = 0;
+                }
+            }
+            
+            $session.result = result;
