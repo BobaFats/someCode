@@ -1,0 +1,35 @@
+ // Функция для добавления/вычитания дней из даты которую указал клиент. Задача, предложить свободное время клиенту из возможных. 
+//Далее идёт поиск врачей на указанную дату. Если они есть, то уже готовый результат предоставляется клиенту для подтверждения. 
+            function addDaysToDate(dateString, days) {
+              var date = new Date(dateString);
+
+              //используем встроенные функции  которые возвращают нам день месяца, второй устанавливает день месяца для указанной даты
+              //Если к нам пришло 10.03.2000, то пdate.getDate() вернёт 10
+              //Если к нам пришло 10 то вернёт + days (например пришло 31 января 2026, а вызовем setDate(32), то вернётся нам 1 февраля 2026
+              date.setDate(date.getDate() + days);
+              // Форматирование обратно в строку YYYY-MM-DD без padStart
+              var year = date.getFullYear();
+              var month = date.getMonth() + 1;
+              var day = date.getDate();
+              // Добавляем ведущий ноль если число < 10, попробовал упростить используя тернарный оператор
+              var monthStr = month < 10 ? '0' + month : '' + month;
+              var dayStr = day < 10 ? '0' + day : '' + day;
+              return year + '-' + monthStr + '-' + dayStr;
+            }
+            //Запускаем попытки и начинает формироавть варианты для клиента
+            if ($session.try_day === 1) {
+                $session.wishTime = addDaysToDate($session.importantData, 2);
+            } else if ($session.try_day > 1){
+                $session.wishTime = addDaysToDate($session.importantData, 1);
+            } else {
+              // Сравниваем даты
+              if ($session.notImportatnData === $session.dateObj.formatted) {
+                // Если даты одинаковые - прибавляем 1 день
+                $session.wishTime = addDaysToDate($session.notImportatnData, 1);
+              } else {
+                // Если даты разные - вычитаем 1 день
+                $session.wishTime = addDaysToDate($session.notImportatnData, -1);
+              } 
+            }
+            $session.importantData = $session.wishTime;
+            $session.try_day += 1;
